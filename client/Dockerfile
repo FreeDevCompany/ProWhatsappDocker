@@ -2,8 +2,6 @@
 FROM node:alpine as client-builder
 WORKDIR /app
 COPY . /app
-RUN yarn install
-RUN yarn build
 
 # İkinci adımda, Nginx imajını kullanın ve "client" build çıktısını kopyalayın.
 FROM nginx:alpine
