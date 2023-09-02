@@ -1,19 +1,38 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
+import { IEntity } from "./entity.types";
+import { HashHelper } from "../../application/utilities/hashHelper";
 
 
-interface IUser {
-    username: string;
+export interface IUserDto extends IEntity{
+    avatar: Buffer;
+    firstName: string;
+    lastName: string;
     phone: string;
     email: string;
+    email_hash?: string;
     password: string;
     roleId: string;
     verified?: boolean;
     extraNumberCount: Number;
+    activeSession?: {
+        token: string;
+        expireDate: Date,
+    };
     created_at?: Date;
     updated_at?: Date;
 }
-const userSchema = new Schema<IUser>({
-    username: {
+interface IUserDocument extends Document, IUserDto {
+}; 
+export const userSchema = new Schema({
+    avatar: {
+        required: true,
+        type: Buffer
+    },
+    firstName: {
+        required: true,
+        type: String,
+    },
+    lastName: {
         required: true,
         type: String,
     },
@@ -25,6 +44,10 @@ const userSchema = new Schema<IUser>({
         required: true,
         type: String,
     },
+    email_hash: {
+        required: false,
+        type: String,
+    },
     password: {
         required: true,
         type: String,
@@ -33,6 +56,7 @@ const userSchema = new Schema<IUser>({
         required: true,
         type: String,
     },
+
     verified: {
         required: false,
         type: Boolean,
@@ -42,10 +66,23 @@ const userSchema = new Schema<IUser>({
         required: true,
         type: Number,
     },
+    activeSession: {
+        required: false,
+        type: {
+            token: {
+                required: true,
+                type: String,
+            },
+            expireDate: {
+                required: true,
+                type: Date
+            },
+        }
+    },
     created_at: {
         required: false,
         type: Date,
-        default: new Date(),
+        default: new Date()
     },
     updated_at: {
         required: false,
@@ -53,4 +90,7 @@ const userSchema = new Schema<IUser>({
         default: new Date(),
     },
 })
-const UserModel = mongoose.model<IUser>('User', userSchema);
+userSchema.pre('save', async function(this:any, next) {
+    if(!this.isModified('password')) next();
+    this.password = await HashHelper.encrypt(this.password);
+})

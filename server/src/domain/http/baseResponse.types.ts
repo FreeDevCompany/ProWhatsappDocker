@@ -13,6 +13,7 @@ interface IMetaData {
     currentPage: Number;
     pageSize: Number;
 }
+
 interface IPaginationResponse<T>
 {
     status_code : Number;
