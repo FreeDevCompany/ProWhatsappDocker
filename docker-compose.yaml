@@ -9,10 +9,42 @@ services:
       - "80:80"
     depends_on:
       - api
+      - mongodb
+      - redis
+    networks:
+      - mern-app
   api:
     build:
       dockerfile: Dockerfile
       context: ./server
     volumes:
-      - '/app/node_modules'
-      - './server:/app'
+      - "/app/node_modules"
+      - "./server:/app"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - mern-app
+    restart: unless-stopped
+  mongodb:
+    image: "mongo"
+    ports:
+      - "27017:27017"
+    networks:
+      - mern-app
+    volumes:
+      - mongo-data:/data/db
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - mern-app
+networks:
+  mern-app:
+    driver: bridge
+volumes:
+  mongo-data:
+    driver: local

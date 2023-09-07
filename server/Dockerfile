@@ -1,5 +1,5 @@
 FROM node:latest
 WORKDIR /app
-COPY package.json ./
-RUN yarn install
-CMD ["yarn","start:dev"]
+COPY . .
+RUN npm install
+CMD ["npx", "nodemon", "dist/app.js"]
