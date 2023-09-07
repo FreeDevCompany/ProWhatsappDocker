@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 45
+    },
+    "auditLog": "/app/dist/src/infrastructure/logManagement/logs/.0af468d96ed7c2a32f33877ed71d60880b3503a2-audit.json",
+    "files": [
+        {
+            "date": 1694050242340,
+            "name": "/app/dist/src/infrastructure/logManagement/logs/app-07-09-2023.log",
+            "hash": "d49011ee9d37baab858a265d7b7f4e38faec9cf5d9847674759e8a26283e50a2"
+        }
+    ],
+    "hashType": "sha256"
+}
