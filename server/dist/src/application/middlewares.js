@@ -36,42 +36,26 @@ let Middleware = class Middleware {
                 const authHeader = req.headers['x-token'];
                 const user_agent = req.headers['user-agent'];
                 const token = authHeader && authHeader.split(' ')[1];
-                if (!token)
-                    return res.status(401).send({
-                        data: {},
-                        message: "Unauthorized",
-                        requirement: "LOGIN_REQUIRED",
-                        status_code: 401
-                    });
+                if (!token) {
+                    console.log("token yok aga");
+                    throw new Error("Unauthorized");
+                }
+                const decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token);
+                if (!decodedToken) {
+                    throw new Error("Unauthorized");
+                }
+                const cacheToken = yield this.cacheService.getCacheItem(decodedToken.id);
+                const statement = yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId);
+                if (cacheToken.token === token && statement) {
+                    next(); // Doğrulama başarılı, sonraki middleware'e geçin
+                }
                 else {
-                    let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token);
-                    if (decodedToken) {
-                        let cacheToken = yield this.cacheService.getCacheItem(decodedToken.id);
-                        let statement = yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId);
-                        if (cacheToken.token === token && statement) {
-                            next();
-                        }
-                        else {
-                            res.status(401).send({
-                                data: {},
-                                message: "Unauthorized",
-                                requirement: "LOGIN_REQUIRED",
-                                status_code: 401
-                            });
-                        }
-                    }
-                    else {
-                        res.status(401).send({
-                            data: {},
-                            message: "Unauthorized",
-                            requirement: "LOGIN_REQUIRED",
-                            status_code: 401
-                        });
-                    }
+                    throw new Error("Unauthorized");
                 }
             }
             catch (error) {
-                return res.status(401).send({
+                console.log(error.message);
+                res.status(401).json({
                     data: {},
                     message: "Unauthorized",
                     requirement: "LOGIN_REQUIRED",
@@ -107,7 +91,7 @@ exports.GateWayMiddleware = GateWayMiddleware;
 GateWayMiddleware.verifyGateWay = (req, res, next) => {
     let gateWay = req.headers['x-api-gateway'];
     if (!gateWay && process.env.GATEWAY_SECRET_KEY !== gateWay)
-        res.status(500).send({
+        res.status(500).json({
             data: {},
             message: "Unknown client. Permission Denied.",
             requirement: "",
