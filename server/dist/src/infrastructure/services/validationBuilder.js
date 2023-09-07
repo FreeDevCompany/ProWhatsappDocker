@@ -32,29 +32,34 @@ let ValidationBuilder = class ValidationBuilder {
         this.addQuery(query);
         let tempValidation = this.validator;
         return (req, res, next) => {
-            const { headers, body, params, query } = tempValidation;
-            if (headers) {
-                let result = headers.validate(req.headers);
-                if (result.error)
-                    res.status(400).send({ message: "Invalid headers", details: result.error.details });
-            }
-            else if (body) {
-                let result = body.validate(req.body);
-                if (result.error)
-                    res.status(400).send({ message: "Invalid body", details: result.error.details });
-            }
-            else if (query) {
-                let result = query.validate(req.query);
-                if (result.error)
-                    res.status(400).send({ message: "Invalid query", details: result.error.details });
-            }
-            else if (params) {
-                let result = params.validate(req.params);
-                if (result.error)
-                    res.status(400).send({ message: "Invalid params", details: result.error.details });
-            }
-            else {
+            try {
+                const { headers, body, params, query } = tempValidation;
+                if (headers) {
+                    let result = headers.validate(req.headers);
+                    if (result.error)
+                        throw result.error;
+                }
+                else if (body) {
+                    let result = body.validate(req.body);
+                    if (result.error)
+                        throw result.error;
+                }
+                else if (query) {
+                    let result = query.validate(req.query);
+                    if (result.error)
+                        throw result.error;
+                }
+                else if (params) {
+                    let result = params.validate(req.params);
+                    if (result.error)
+                        throw result.error;
+                }
                 next();
+            }
+            catch (error) {
+                res.status(400).send({
+                    message: "Validation Error.", details: error.details
+                });
             }
         };
     }
