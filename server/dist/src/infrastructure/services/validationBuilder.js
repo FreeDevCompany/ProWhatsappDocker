@@ -53,7 +53,9 @@ let ValidationBuilder = class ValidationBuilder {
                 if (result.error)
                     res.status(400).send({ message: "Invalid params", details: result.error.details });
             }
-            next();
+            else {
+                next();
+            }
         };
     }
 };
