@@ -34,7 +34,7 @@ let CacheService = class CacheService {
         };
         this.redisClient = new ioredis_1.Redis(process.env.REDIS_URL, {
             connectTimeout: 10000,
-            host: 'redis',
+            host: `redis`,
             port: 6379
         });
     }

@@ -160,7 +160,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                             let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(cachedData.token);
                             if (decodedToken.expireDate && decodedToken.deviceId) {
                                 if (new Date(Date.parse(decodedToken.expireDate)) > today && !(yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId)))
-                                    this.response = (0, responseHelper_1.generateResponse)({}, "You have an open session. Would you like to end your current session and continue from here?", "KILL_SESSION", 403);
+                                    this.response = (0, responseHelper_1.generateResponse)({ id: decodedToken.id }, "You have an open session. Would you like to end your current session and continue from here?", "KILL_SESSION", 409);
                                 else
                                     this.response = (0, responseHelper_1.generateResponse)({}, "Already logged in", "", 400);
                             }
@@ -217,7 +217,8 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                             this.response = (0, responseHelper_1.generateResponse)({ token }, "Loggin in...", "HOME_PAGE", 200);
                             this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} killed his other session and logged into the system from different device]`);
                         }
-                        this.response = (0, responseHelper_1.generateResponse)({}, "Invalid token", "", 400);
+                        else
+                            this.response = (0, responseHelper_1.generateResponse)({}, "Invalid token", "", 400);
                     }
                 }
             }
@@ -238,6 +239,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                     this.userRepository.update(user._id, user);
                     this.response = (0, responseHelper_1.generateResponse)({}, "Your password has been changed.", "LOGIN_REQUIRED", 200);
                     this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} has change password.]`);
+                    this.cacheService.removeCacheItem(user._id);
                 }
             }
             else

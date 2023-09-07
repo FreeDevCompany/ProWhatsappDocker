@@ -23,15 +23,14 @@ const mailProvider_class_1 = require("../../infrastructure/services/mailProvider
 class HttpServer {
     constructor() {
         this.start = (port) => __awaiter(this, void 0, void 0, function* () {
-            this.app.listen(port ? port : 3000, () => __awaiter(this, void 0, void 0, function* () {
-                yield mongoose_1.default.connect(process.env.MONGO_URL)
-                    .then((results) => {
-                    console.log("connected to the database");
-                }).catch((error) => {
-                    console.log(error.message);
-                });
-                console.log(`server is running on port ${port ? port : 3000}`);
-            }));
+            yield mongoose_1.default.connect(process.env.MONGO_URL)
+                .then((results) => {
+                this.app.listen(port ? port : 3000, () => __awaiter(this, void 0, void 0, function* () {
+                    console.log(`server is running on port ${port ? port : 3000}`);
+                }));
+            }).catch((error) => {
+                console.log(error.message);
+            });
         });
         this.addRoute = (router) => {
             this.app.use(middlewares_1.GateWayMiddleware.verifyGateWay, router);
