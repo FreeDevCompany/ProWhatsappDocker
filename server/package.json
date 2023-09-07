@@ -10,16 +10,23 @@
     "start:prod": "node dist/app.js"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@types/argon2": "^0.15.0",
     "@types/body-parser": "^1.19.2",
     "@types/cors": "^2.8.13",
     "@types/express-session": "^1.17.7",
+=======
+    "@types/bcrypt": "^5.0.0",
+    "@types/body-parser": "^1.19.2",
+    "@types/cors": "^2.8.13",
+>>>>>>> 3ef848e60501be5bc406b3e36ab0c375b7b72df3
     "@types/helmet": "^4.0.0",
     "@types/joi": "^17.2.3",
     "@types/jsonwebtoken": "^9.0.2",
     "@types/mongoose": "^5.11.97",
     "@types/nodemailer": "^6.4.9",
     "@types/winston": "^2.4.4",
+<<<<<<< HEAD
     "argon2": "^0.31.1",
     "body-parser": "^1.20.2",
     "connect-redis": "^7.1.0",
@@ -31,10 +38,24 @@
     "inversify": "^6.0.1",
     "inversify-express-utils": "^6.4.3",
     "ioredis": "^5.3.2",
+=======
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.0.0",
+    "inversify": "^6.0.1",
+    "inversify-express-utils": "^6.4.3",
+>>>>>>> 3ef848e60501be5bc406b3e36ab0c375b7b72df3
     "joi": "^17.10.1",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.0.0",
     "mongoose": "^7.5.0",
+<<<<<<< HEAD
+=======
+    "node-device-detector": "^2.0.16",
+>>>>>>> 3ef848e60501be5bc406b3e36ab0c375b7b72df3
     "nodemailer": "^6.9.4",
     "reflect-metadata": "^0.1.13",
     "winston": "^3.10.0",
