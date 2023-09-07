@@ -32,7 +32,11 @@ let CacheService = class CacheService {
         this.removeCacheItem = (key) => {
             this.redisClient.del(key);
         };
-        this.redisClient = new ioredis_1.Redis({ host: 'redis', port: 6379 });
+        this.redisClient = new ioredis_1.Redis(process.env.REDIS_URL, {
+            connectTimeout: 10000,
+            host: 'redis',
+            port: 6379
+        });
     }
 };
 exports.CacheService = CacheService;

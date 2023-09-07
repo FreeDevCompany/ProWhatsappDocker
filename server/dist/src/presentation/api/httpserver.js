@@ -24,7 +24,7 @@ class HttpServer {
     constructor() {
         this.start = (port) => __awaiter(this, void 0, void 0, function* () {
             this.app.listen(port ? port : 3000, () => __awaiter(this, void 0, void 0, function* () {
-                yield mongoose_1.default.connect('mongodb://mongodb:27017/proWhatsApp')
+                yield mongoose_1.default.connect(process.env.MONGO_URL)
                     .then((results) => {
                     console.log("connected to the database");
                 }).catch((error) => {

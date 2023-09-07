@@ -42,8 +42,6 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                 let foundUser = yield this.userRepository.findOne({
                     $or: [{ email: body.email }, { phone: body.phone }]
                 });
-                console.log(foundUser);
-                yield this.userRepository.deleteAll();
                 if (foundUser) {
                     this.loggerService.Log(loggerService_class_1.LogType.WARNING, loggerService_class_1.LogLocation.consoleAndFile, "The client is trying to register again with the information registered in the system.");
                     this.response = (0, responseHelper_1.generateResponse)({}, "There is a user registered in the system with this credentials.", "TRY_AGAIN", 400);
@@ -76,6 +74,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                             user.email_hash = email_hash;
                             yield this.userRepository.update(user._id, user);
                             this.response = (0, responseHelper_1.generateResponse)({}, "Email verified Successfully.", "LOGIN_REQUEIRED", 200);
+                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id}] verified email.`);
                         }
                         else {
                             this.response = (0, responseHelper_1.generateResponse)({}, "Email verification time already verificated.", "", 200);
@@ -89,7 +88,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                 return this.response;
             }
             catch (error) {
-                console.log(error);
+                this.loggerService.Log(loggerService_class_1.LogType.ERROR, loggerService_class_1.LogLocation.all, error.message);
                 this.response = (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
                 return this.response;
             }
@@ -113,6 +112,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                 return this.response;
             }
             catch (error) {
+                this.loggerService.Log(loggerService_class_1.LogType.ERROR, loggerService_class_1.LogLocation.all, error.message);
                 this.response = (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
                 return this.response;
             }
@@ -131,6 +131,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                             yield this.userRepository.update(user._id, user);
                             this.cacheService.removeCacheItem(`${user_agent}-forgotPass`);
                             this.response = (0, responseHelper_1.generateResponse)({}, "The password has been successfully changed.", "LOGIN_REQUIRED", 200);
+                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `${user._id} has changed his password. [FORGOT PASSWORD]`);
                         }
                     }
                 }
@@ -174,6 +175,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                             }, '7d');
                             this.cacheService.setCacheItem(user._id, { token });
                             this.response = (0, responseHelper_1.generateResponse)({ token }, "Logging in...", "HOME_PAGE", 200);
+                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} logged into the system]`);
                         }
                     }
                     else {
@@ -185,6 +187,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                         }, '7d');
                         this.cacheService.setCacheItem(user._id, { token });
                         this.response = (0, responseHelper_1.generateResponse)({ token }, "Logging in...", "HOME_PAGE", 200);
+                        this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} logged into the system]`);
                     }
                 }
             }
@@ -212,6 +215,7 @@ let AuthenticationUseCases = class AuthenticationUseCases {
                             }, '7d');
                             this.cacheService.setCacheItem(user._id, { token });
                             this.response = (0, responseHelper_1.generateResponse)({ token }, "Loggin in...", "HOME_PAGE", 200);
+                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} killed his other session and logged into the system from different device]`);
                         }
                         this.response = (0, responseHelper_1.generateResponse)({}, "Invalid token", "", 400);
                     }
@@ -227,14 +231,33 @@ let AuthenticationUseCases = class AuthenticationUseCases {
             if (user) {
                 if (!(yield hashHelper_1.HashHelper.compare(currentPassword, user.password)))
                     this.response = (0, responseHelper_1.generateResponse)({}, "Your old password is incorrect.", "TRY_AGAIN", 400);
-                if (yield hashHelper_1.HashHelper.compare(newPassword, user.password))
+                else if (yield hashHelper_1.HashHelper.compare(newPassword, user.password))
                     this.response = (0, responseHelper_1.generateResponse)({}, "The new password cannot be the same as the old password.", "", 400);
-                user.password = yield hashHelper_1.HashHelper.encrypt(newPassword);
-                this.userRepository.update(user._id, user);
-                this.response = (0, responseHelper_1.generateResponse)({}, "Your password has been changed.", "LOGIN_REQUIRED", 200);
+                else {
+                    user.password = yield hashHelper_1.HashHelper.encrypt(newPassword);
+                    this.userRepository.update(user._id, user);
+                    this.response = (0, responseHelper_1.generateResponse)({}, "Your password has been changed.", "LOGIN_REQUIRED", 200);
+                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} has change password.]`);
+                }
             }
             else
                 this.response = (0, responseHelper_1.generateResponse)({}, "Invalid user operation", "LOGIN_REQURED", 404);
+            return this.response;
+        });
+        this.logOut = (token) => __awaiter(this, void 0, void 0, function* () {
+            this.response = undefined;
+            let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token.split(' ')[1]);
+            if (decodedToken) {
+                let user = yield this.userRepository.getById(decodedToken.id);
+                if (user && this.cacheService.getCacheItem(decodedToken.id)) {
+                    this.cacheService.removeCacheItem(decodedToken.id);
+                    this.response = (0, responseHelper_1.generateResponse)({}, "", "", 200);
+                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} has left from the system.]`);
+                }
+            }
+            else {
+                this.response = (0, responseHelper_1.generateResponse)({}, "Already Logged out.", "", 400);
+            }
             return this.response;
         });
         this.userRepository = _userRepository;

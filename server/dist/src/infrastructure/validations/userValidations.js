@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfileBody = exports.updateProfileParam = exports.forgotPasswordConfirmQuery = exports.forgotPasswordLinkParam = exports.forgotPasswordConfirmBody = exports.resetSessionBod = exports.forgotPasswordLinkBody = exports.verifyEmailQuery = exports.resetPasswordBody = exports.loginBody = exports.signUpBody = void 0;
+exports.updateProfileBody = exports.updateProfileParam = exports.forgotPasswordParam = exports.forgotPasswordLinkParam = exports.forgotPasswordConfirmBody = exports.resetSessionBod = exports.forgotPasswordLinkBody = exports.verifyEmailQuery = exports.resetPasswordBody = exports.loginBody = exports.signUpBody = void 0;
 const joi_1 = __importDefault(require("joi"));
 exports.signUpBody = joi_1.default.object({
     avatar: joi_1.default.string().required(),
@@ -37,7 +37,7 @@ exports.forgotPasswordConfirmBody = joi_1.default.object({
 exports.forgotPasswordLinkParam = joi_1.default.object({
     userId: joi_1.default.string().required(),
 });
-exports.forgotPasswordConfirmQuery = joi_1.default.object({
+exports.forgotPasswordParam = joi_1.default.object({
     token: joi_1.default.string().required(),
 });
 exports.updateProfileParam = joi_1.default.object({

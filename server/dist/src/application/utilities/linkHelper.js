@@ -18,11 +18,13 @@ class LinkHelper {
             let hash = yield hashHelper_1.HashHelper.encrypt(`${to}${id}`);
             console.log(hash);
             let mailService = mailProvider_class_1.GmailSender.getInstance();
+            let baseLink = process.env.NODE_ENV === 'PRODUCTION' ? process.env.WEB_URL :
+                'http:localhost:3011';
             yield mailService.sendMail({
                 provider: "test@gmail.com",
                 from: "Pro-Whats-App-WEB Service",
                 subject: "Email verification",
-                text: `http://localhost:5000/api/v1/auth/${id}/verify-email?hash=${encodeURIComponent(hash)}`,
+                text: `${baseLink}/auth/${id}/verify-email/${encodeURIComponent(hash)}`,
                 to: to
             });
         });
@@ -30,8 +32,9 @@ class LinkHelper {
     static SendForgotPasswordLink(to, id, token) {
         return __awaiter(this, void 0, void 0, function* () {
             let mailService = mailProvider_class_1.GmailSender.getInstance();
-            let link = `http://localhost:5000/api/v1/auth/forgot-password-confirm/${encodeURIComponent(token)}`;
-            console.log(link);
+            let baseLink = process.env.NODE_ENV === 'PRODUCTION' ? process.env.WEB_URL :
+                'http:localhost:3011';
+            let link = `${baseLink}/auth/forgot-password-confirm/${encodeURIComponent(token)}`;
             yield mailService.sendMail({
                 provider: "test@gmail.com",
                 from: "Pro-Whats-App-WEB Service",

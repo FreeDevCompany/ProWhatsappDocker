@@ -1,4 +1,0 @@
-[2023-09-07T01:31:22.574Z] [Pro-Whats-App-Service]-[[31MERROR[39M] => [Operation `users.findOne()` buffering timed out after 10000ms]]
-[2023-09-07T01:31:35.748Z] [Pro-Whats-App-Service]-[[31MERROR[39M] => [Operation `users.findOne()` buffering timed out after 10000ms]]
-[2023-09-07T01:39:20.277Z] [Pro-Whats-App-Service]-[[32MINFO[39M] => [The email has been sent. A new user has joined us. 64f929c6e4a5aab886075dfc]]
-[2023-09-07T01:39:25.352Z] [Pro-Whats-App-Service]-[[33MWARN[39M] => [The client is trying to register again with the information registered in the system.]]

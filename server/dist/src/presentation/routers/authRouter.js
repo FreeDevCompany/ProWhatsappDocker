@@ -31,6 +31,7 @@ let AuthRouter = class AuthRouter {
             // login (need deviceId)
             this.routeProvider.post("/api/v1/auth/login/", this.validations['login'], // validation middleware, 
             this.userController.Login);
+            this.routeProvider.post("/api/v1/auth/logout/", this.validations['logout'], this.middleware.verifySession, this.userController.Logout);
             this.routeProvider.post("/api/v1/auth/login/reset-session", this.validations['reset-session-login'], this.userController.ResetSessionAndLogin);
             // reset password (need token | need device Id)
             this.routeProvider.patch("/api/v1/auth/reset-password/", this.validations['resetPassword'], this.middleware.verifySession, this.userController.ResetPassword);
@@ -51,8 +52,9 @@ let AuthRouter = class AuthRouter {
         this.validations['login'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.loginBody, undefined, undefined);
         this.validations['resetPassword'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, userValidations_1.resetPasswordBody, undefined, undefined);
         this.validations['forgot-password'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.forgotPasswordLinkBody, undefined, undefined);
-        this.validations['forgot-password-confirm'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.forgotPasswordConfirmBody, undefined, userValidations_1.forgotPasswordConfirmQuery);
+        this.validations['forgot-password-confirm'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.forgotPasswordConfirmBody, undefined, userValidations_1.forgotPasswordParam);
         this.validations['reset-session-login'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.resetSessionBod, undefined, undefined);
+        this.validations['logout'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, undefined, undefined, undefined);
     }
 };
 exports.AuthRouter = AuthRouter;

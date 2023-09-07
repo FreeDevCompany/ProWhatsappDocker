@@ -43,10 +43,25 @@ let Middleware = class Middleware {
                         requirement: "LOGIN_REQUIRED",
                         status_code: 401
                     });
-                let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token);
-                if (decodedToken) {
-                    if (!(decodedToken.expireDate && decodedToken.deviceId) || !(yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId))) {
-                        return res.status(401).send({
+                else {
+                    let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token);
+                    if (decodedToken) {
+                        let cacheToken = yield this.cacheService.getCacheItem(decodedToken.id);
+                        let statement = yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId);
+                        if (cacheToken.token === token && statement) {
+                            next();
+                        }
+                        else {
+                            res.status(401).send({
+                                data: {},
+                                message: "Unauthorized",
+                                requirement: "LOGIN_REQUIRED",
+                                status_code: 401
+                            });
+                        }
+                    }
+                    else {
+                        res.status(401).send({
                             data: {},
                             message: "Unauthorized",
                             requirement: "LOGIN_REQUIRED",
@@ -54,7 +69,6 @@ let Middleware = class Middleware {
                         });
                     }
                 }
-                next();
             }
             catch (error) {
                 return res.status(401).send({
@@ -74,6 +88,7 @@ let Middleware = class Middleware {
         };
         this.userRepository = userRepo;
         this.loggerService = loggerServ;
+        this.cacheService = cacheService;
     }
 };
 exports.Middleware = Middleware;

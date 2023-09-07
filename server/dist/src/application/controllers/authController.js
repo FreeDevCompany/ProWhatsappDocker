@@ -57,6 +57,11 @@ let AuthController = class AuthController {
             let response = yield this.useCaseService.Login(user_agent, email, password);
             return res.status(response.status_code).json(response);
         }));
+        this.Logout = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            const token = req.headers['x-token'];
+            let response = yield this.useCaseService.logOut(token);
+            return res.status(response.status_code).json(response);
+        }));
         this.ResetSessionAndLogin = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const user_agent = req.headers['user-agent'];
             const { id } = req.body;
@@ -76,6 +81,7 @@ let AuthController = class AuthController {
         }));
         this.ForgotPasswordConfirm = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const token = decodeURIComponent(req.params.token);
+            console.log(token);
             const password = req.body.password;
             const user_agent = req.headers['user-agent'];
             let response = yield this.useCaseService.getForgotPasswordConfirm(token, password, user_agent);
