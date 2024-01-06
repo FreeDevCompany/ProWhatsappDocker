@@ -126,17 +126,6 @@ export class QuequeUseCases {
           startDate: beginTime.beginTime
         })
         let quequeItems: Array<IQuequeItem> = [];
-        if (body.customers) {
-          if (body.customers.length > 0) {
-            body.customers.map(item => {
-              quequeItems.push({
-                customerId: item,
-                quequeId: createdQueque._id as unknown as string,
-                spendCredit: false,
-              })
-            })
-          }
-        }
         if (body.groupId) {
           const isHaveGroup = await this.repositoryService.customerGroupRepository.getById(body.groupId);
           if (!isHaveGroup) return;
@@ -152,6 +141,20 @@ export class QuequeUseCases {
             })
           })
         }
+        if (body.customers) {
+          if (body.customers.length > 0) {
+            body.customers.map(item => {
+              let data = {
+                customerId: item,
+                quequeId: createdQueque._id as unknown as string,
+                spendCredit: false,
+              }
+              if (!quequeItems.includes(data))
+                quequeItems.push()
+            })
+          }
+        }
+        
         const credit = await this.repositoryService.creditRepository.findOne({ userId: body.userId });
         const totalUnspendItems = await this.repositoryService.quequeRepository.getTotalQueueItemCountForNotSpendCredit(body.userId);
         if (credit.totalAmount < (totalUnspendItems + quequeItems.length)) {
