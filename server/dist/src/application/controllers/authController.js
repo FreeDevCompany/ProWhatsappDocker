@@ -42,53 +42,76 @@ let AuthController = class AuthController {
          */
         this.SignUp = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             let signUpBody = req.body;
-            let response = yield this.useCaseService.createUser(signUpBody);
+            let response = yield this.useCaseService.registerUser(signUpBody);
             return res.status(response.status_code).json(response);
         }));
         this.VerifyEmail = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const id = req.params.id;
             const email_hash = decodeURIComponent(req.query.hash);
-            let response = yield this.useCaseService.verifyEmail(id, email_hash);
+            let response = yield this.useCaseService.verifyEmail({ userId: id, email_hash });
             return res.status(response.status_code).json(response);
         }));
         this.Login = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const user_agent = req.headers['user-agent'];
             const { email, password } = req.body;
-            let response = yield this.useCaseService.Login(user_agent, email, password);
+            let response = yield this.useCaseService.Login({ user_agent: user_agent, email: email, password: password });
             return res.status(response.status_code).json(response);
         }));
         this.Logout = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const token = req.headers['x-token'];
-            let response = yield this.useCaseService.logOut(token);
+            let response = yield this.useCaseService.logOut({ token });
             return res.status(response.status_code).json(response);
         }));
         this.ResetSessionAndLogin = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const user_agent = req.headers['user-agent'];
             const { id } = req.body;
-            let response = yield this.useCaseService.resetSessionAndLogin(id, user_agent);
+            let response = yield this.useCaseService.resetSessionAndLogin({ id, user_agent });
             return res.status(response.status_code).json(response);
         }));
         this.ResetPassword = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { id, currentPassword, newPassword } = req.body;
-            let response = yield this.useCaseService.resetPassword(id, currentPassword, newPassword);
+            let response = yield this.useCaseService.resetPassword({ id, currentPassword, newPassword });
             return res.status(response.status_code).json(response);
         }));
         this.ForgotPasswordLink = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const { email } = req.body;
             const user_agent = req.headers['user-agent'];
-            let response = yield this.useCaseService.getForgotPasswordLink(email, user_agent);
+            let response = yield this.useCaseService.getForgotPasswordLink({ email, user_agent });
             return res.status(response.status_code).json(response);
         }));
         this.ForgotPasswordConfirm = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             const token = decodeURIComponent(req.params.token);
-            console.log(token);
             const password = req.body.password;
             const user_agent = req.headers['user-agent'];
-            let response = yield this.useCaseService.getForgotPasswordConfirm(token, password, user_agent);
+            let response = yield this.useCaseService.getForgotPasswordConfirm({ token, password, user_agent });
             return res.status(response.status_code).json(response);
         }));
         this.OtpVerification = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            return null;
         });
+        this.FreezeAccount = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let user = req.params.user;
+            let password = req.body.password;
+            const response = yield this.useCaseService.freezeAccount({ user: user, password: password });
+            return res.status(response.status_code).send(response);
+        }));
+        this.ReactivateAccount = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let user = req.params.user;
+            const response = yield this.useCaseService.reactivateAccountLink({ user });
+            return res.status(response.status_code).send(response);
+        }));
+        this.ReactivateAccountConfirm = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let user = req.params.user;
+            let code = req.params.code;
+            const response = yield this.useCaseService.reactivateAccountConfirm({ user: user, code: code });
+            return res.status(response.status_code).send(response);
+        }));
+        this.DeleteAccount = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let user = req.params.user;
+            let password = req.body.password;
+            const response = yield this.useCaseService.deleteAccount({ user: user, password: password });
+            return res.status(response.status_code).send(response);
+        }));
         this.useCaseService = _service;
     }
 };

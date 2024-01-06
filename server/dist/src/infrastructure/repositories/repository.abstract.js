@@ -34,6 +34,7 @@ let RepositoryBase = class RepositoryBase {
             return yield this.dbContext.Create(model);
         });
         this.update = (id, model) => __awaiter(this, void 0, void 0, function* () {
+            model.updatedAt = new Date();
             return yield this.dbContext.Update(id, model);
         });
         this.delete = (id) => __awaiter(this, void 0, void 0, function* () {
@@ -47,6 +48,12 @@ let RepositoryBase = class RepositoryBase {
         });
         this.deleteAll = () => __awaiter(this, void 0, void 0, function* () {
             yield this.dbContext.DeleteAll();
+        });
+        this.findMultiple = (page, perPage, query) => __awaiter(this, void 0, void 0, function* () {
+            return yield this.dbContext.FindMultiple(page, perPage, query);
+        });
+        this.deleteMany = (query) => __awaiter(this, void 0, void 0, function* () {
+            yield this.dbContext.DeleteMany(query);
         });
         this.dbContext = _dbContext;
     }

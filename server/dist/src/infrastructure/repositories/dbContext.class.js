@@ -42,11 +42,44 @@ let DbContext = class DbContext {
         this.GetAll = () => __awaiter(this, void 0, void 0, function* () {
             return this.model.find({}).exec();
         });
+        this.DeleteMany = (query) => __awaiter(this, void 0, void 0, function* () {
+            this.model.deleteMany(query);
+        });
         this.DeleteAll = () => __awaiter(this, void 0, void 0, function* () {
             yield this.model.deleteMany({});
         });
         this.FindOne = (query) => __awaiter(this, void 0, void 0, function* () {
             return this.model.findOne(query);
+        });
+        this.FindMultiple = (page, perPage, query) => __awaiter(this, void 0, void 0, function* () {
+            if (page && perPage) {
+                const skipCount = (page - 1) * perPage;
+                const items = yield this.model.find(query).skip(skipCount).limit(perPage).exec();
+                const totalItems = yield this.model.countDocuments(query);
+                const totalPage = Math.ceil(totalItems / perPage);
+                if (page > totalPage)
+                    return null;
+                if (items.length > 0 || (page === 1 && totalItems === 0)) {
+                    const paginationReturn = {
+                        data: items,
+                        currentPage: page,
+                        totalItems: totalItems,
+                        perPage: perPage,
+                        totalPage: totalItems % perPage === 0 ? totalPage : totalPage + 1
+                    };
+                    return paginationReturn;
+                }
+            }
+            const itemsTotal = yield this.model.find(query);
+            const totalCount = yield this.model.countDocuments(query);
+            const allPagination = {
+                data: itemsTotal,
+                perPage: totalCount,
+                totalPage: 1,
+                totalItems: totalCount,
+                currentPage: 1
+            };
+            return allPagination;
         });
         this.InitializeConfiguration(modelName, schema);
     }

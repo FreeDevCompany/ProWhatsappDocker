@@ -24,258 +24,297 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthenticationUseCases = void 0;
 const inversify_1 = require("inversify");
 const ioc_types_1 = require("../../domain/models/ioc.types");
-const userRepository_class_1 = require("../../infrastructure/repositories/userRepository.class");
-const mailProvider_class_1 = require("../../infrastructure/services/mailProvider.class");
 const hashHelper_1 = require("../utilities/hashHelper");
 const loggerService_class_1 = require("../../infrastructure/services/loggerService.class");
-const redisService_1 = require("../../infrastructure/cacheManagement/redisService");
 const jwtHandler_class_1 = require("../../infrastructure/services/jwtHandler.class");
 const linkHelper_1 = require("../utilities/linkHelper");
 const responseHelper_1 = require("../utilities/responseHelper");
+const repositoryService_class_1 = require("../../infrastructure/services/repositoryService.class");
+const codeGenerator_1 = require("../utilities/codeGenerator");
 let AuthenticationUseCases = class AuthenticationUseCases {
-    constructor(_userRepository, _loggerService, cacheService) {
-        this.response = undefined;
-        this.createUser = (body) => __awaiter(this, void 0, void 0, function* () {
+    constructor(repositoryService, loggerService, cacheService) {
+        this.registerUser = (body) => __awaiter(this, void 0, void 0, function* () {
             try {
-                this.response = undefined;
-                // checking email and password already used in system from database
-                let foundUser = yield this.userRepository.findOne({
+                let foundUser = yield this.repositoryService.userRepository.findOne({
                     $or: [{ email: body.email }, { phone: body.phone }]
                 });
+                let isHave = yield this.repositoryService.extraPhoneRepo.findOne({ phone: body.phone });
+                if (isHave)
+                    return (0, responseHelper_1.generateResponse)({}, "There is a user registered in the system with this credentials.", "USED_CREDENTIALS", 400);
                 if (foundUser) {
                     this.loggerService.Log(loggerService_class_1.LogType.WARNING, loggerService_class_1.LogLocation.consoleAndFile, "The client is trying to register again with the information registered in the system.");
-                    this.response = (0, responseHelper_1.generateResponse)({}, "There is a user registered in the system with this credentials.", "TRY_AGAIN", 400);
+                    return (0, responseHelper_1.generateResponse)({}, "There is a user registered in the system with this credentials.", "USED_CREDENTIALS", 400);
                 }
-                else {
-                    let saved = yield this.userRepository.createUser(body.avatar, body.firstName, body.lastName, body.phone, body.email, yield hashHelper_1.HashHelper.encrypt(body.password), 0, "user");
-                    yield linkHelper_1.LinkHelper.SendVerifyEmail(saved.email, saved._id);
-                    // creating new user operation with the user data.
-                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.all, `The email has been sent. A new user has joined us. ${saved._id}`);
-                    this.response = (0, responseHelper_1.generateResponse)(saved, "Successfully Registered. Email Has been sent for verfication.", "GOTO_HOME_PAGE", 201);
-                }
-                return this.response;
+                let saved = yield this.createUser(body);
+                this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.all, `The email has been sent. A new user has joined us. ${saved._id}`);
+                return (0, responseHelper_1.generateResponse)({}, "Successfully Registered. Email Has been sent for verification.", "GOTO_HOME_PAGE", 201);
             }
             catch (error) {
                 this.loggerService.Log(loggerService_class_1.LogType.ERROR, loggerService_class_1.LogLocation.consoleAndFile, error.message);
-                // internal server Error handling (throw | response)
-                this.response = (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
-                return this.response;
+                return (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
             }
         });
-        this.verifyEmail = (userId, email_hash) => __awaiter(this, void 0, void 0, function* () {
+        this.verifyEmail = (body) => __awaiter(this, void 0, void 0, function* () {
+            let isFound = yield this.repositoryService.userRepository.getById(body.userId);
+            if (!isFound)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid User.", "", 404);
+            if ((isFound.verified === true && isFound.email_hash))
+                return (0, responseHelper_1.generateResponse)({}, "Email verification has already been completed.", "LOGIN_REQUIRED", 400);
+            let hashCompareVal = `${isFound.email}${isFound._id}`;
+            if (!(yield hashHelper_1.HashHelper.compare(hashCompareVal, body.email_hash)))
+                return (0, responseHelper_1.generateResponse)({}, "Email verification has already been completed.", "LOGIN_REQUIRED", 400);
+            isFound.verified = true;
+            isFound.email_hash = body.email_hash;
+            yield this.repositoryService.creditRepository.create({
+                userId: isFound._id,
+                totalAmount: 100,
+            });
+            let createdData = yield this.repositoryService.automationSettingsRepo.create({
+                userId: isFound._id,
+                beginTime: new Date(),
+                max_message_delay: 10,
+                min_message_delay: 0,
+            });
+            yield this.repositoryService.userRepository.update(body.userId, isFound);
+            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${isFound._id}] verified email.`);
+            return (0, responseHelper_1.generateResponse)({}, "Email verified Successfully.", "LOGIN_REQUIRED", 200);
+        });
+        this.getForgotPasswordLink = (body) => __awaiter(this, void 0, void 0, function* () {
             try {
-                this.response = undefined;
-                let user = yield this.userRepository.getById(userId);
-                if (user) {
-                    if (user.verified === false && !user.email_hash) {
-                        let hashCompareVal = `${user.email}${user._id}`;
-                        if (yield hashHelper_1.HashHelper.compare(hashCompareVal, email_hash)) {
-                            user.verified = true;
-                            user.email_hash = email_hash;
-                            yield this.userRepository.update(user._id, user);
-                            this.response = (0, responseHelper_1.generateResponse)({}, "Email verified Successfully.", "LOGIN_REQUEIRED", 200);
-                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id}] verified email.`);
-                        }
-                        else {
-                            this.response = (0, responseHelper_1.generateResponse)({}, "Email verification time already verificated.", "", 200);
-                        }
-                    }
-                    else
-                        this.response = (0, responseHelper_1.generateResponse)({}, "Email verification time already verificated.", "", 200);
-                }
-                else
-                    this.response = (0, responseHelper_1.generateResponse)({}, "Invalid User.", "", 404);
-                return this.response;
+                let isFound = yield this.repositoryService.userRepository.findOne({ email: body.email });
+                if (!isFound)
+                    return (0, responseHelper_1.generateResponse)({}, "There is no registered user with this email.", "", 400);
+                let forgotToken = jwtHandler_class_1.jwtHandler.signNewToken({
+                    email: isFound.email,
+                    id: isFound._id
+                }, '5m');
+                this.cacheService.setCacheItem(`${body.user_agent}-forgotPass`, { token: forgotToken });
+                yield linkHelper_1.LinkHelper.SendForgotPasswordLink(isFound.email, isFound._id, forgotToken);
+                this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `Email has been sent to ${isFound._id} for forgot password operation.`);
+                return (0, responseHelper_1.generateResponse)({}, "The email has been sent to your account", "CONFIRM_FORGOT_PASSWROD", 200);
             }
             catch (error) {
                 this.loggerService.Log(loggerService_class_1.LogType.ERROR, loggerService_class_1.LogLocation.all, error.message);
-                this.response = (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
-                return this.response;
+                return (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
             }
         });
-        this.getForgotPasswordLink = (email, user_agent) => __awaiter(this, void 0, void 0, function* () {
+        this.getForgotPasswordConfirm = (body) => __awaiter(this, void 0, void 0, function* () {
             try {
-                this.response = undefined;
-                let user = yield this.userRepository.findOne({ email: email });
-                if (user) {
-                    let forgotToken = jwtHandler_class_1.jwtHandler.signNewToken({
-                        email: user.email,
-                        id: user._id,
-                    }, '5m');
-                    this.cacheService.setCacheItem(`${user_agent}-forgotPass`, { token: forgotToken });
-                    linkHelper_1.LinkHelper.SendForgotPasswordLink(user.email, user._id, forgotToken);
-                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `Email has been sent to ${user._id} for forgot password operation.`);
-                    this.response = (0, responseHelper_1.generateResponse)({}, "The email has been sent to your account", "CONFIRM_FORGOT_PASSWROD", 200);
+                let storedForgotPassToken = yield this.cacheService.getCacheItem(`${body.user_agent}-forgotPass`);
+                if (!storedForgotPassToken)
+                    return (0, responseHelper_1.generateResponse)({}, "Forgot Password time has expired", "", 404);
+                let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(storedForgotPassToken.token);
+                if (decodedToken && decodedToken.id && decodedToken.email) {
+                    let user = yield this.repositoryService.userRepository.getById(decodedToken.id);
+                    if (yield hashHelper_1.HashHelper.compare(body.password, user.password))
+                        return (0, responseHelper_1.generateResponse)({}, "The new password cannot be the same as the old password.", "", 400);
+                    user.password = yield hashHelper_1.HashHelper.encrypt(body.password);
+                    yield this.repositoryService.userRepository.update(decodedToken.id, user);
+                    this.cacheService.removeCacheItem(`${body.user_agent}-forgotPass`);
+                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `${user._id} has changed his password. [FORGOT PASSWORD]`);
+                    return (0, responseHelper_1.generateResponse)({}, "The password has been successfully changed.", "LOGIN_REQUIRED", 200);
                 }
-                else
-                    this.response = (0, responseHelper_1.generateResponse)({}, "There is no registered user with this email.", "", 400);
-                return this.response;
             }
             catch (error) {
-                this.loggerService.Log(loggerService_class_1.LogType.ERROR, loggerService_class_1.LogLocation.all, error.message);
-                this.response = (0, responseHelper_1.generateResponse)({}, error.message, "", 500);
-                return this.response;
+                return (0, responseHelper_1.generateResponse)({}, "The time limit for password reset has expired.", "", 404);
             }
         });
-        this.getForgotPasswordConfirm = (token, password, user_agent) => __awaiter(this, void 0, void 0, function* () {
-            try {
-                this.response = undefined;
-                if (yield this.cacheService.getCacheItem(`${user_agent}-forgotPass`)) {
-                    let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token);
-                    if (decodedToken && decodedToken.id && decodedToken.email) {
-                        let user = yield this.userRepository.getById(decodedToken.id);
-                        if ((yield hashHelper_1.HashHelper.compare(password, user.password)))
-                            this.response = (0, responseHelper_1.generateResponse)({}, "The new password cannot be the same as the old password.", "", 400);
+        this.Login = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getAllDataWithPopulate('roleId', 'Role', undefined, body.email);
+            let today = new Date();
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "The email address you entered is not valid", "HOME_PAGE", 404);
+            if (!(yield hashHelper_1.HashHelper.compare(body.password, user.password)))
+                return (0, responseHelper_1.generateResponse)({}, "The password you entered is incorrect", "LOGIN_REQUIRED", 400);
+            if (user.verified === false)
+                return (0, responseHelper_1.generateResponse)({}, "You need to verify your e-mail.", "VERIFY_EMAIL", 403);
+            if (user.frozenAccount && user.frozenAccount === true)
+                return (0, responseHelper_1.generateResponse)({ id: user._id.toString() }, "Your account is frozen. Would you like to reactivate your account?", "FROZEN_ACCOUNT", 401);
+            let cacheControl = yield this.cacheService.getCacheItem(user._id);
+            if (cacheControl) {
+                try {
+                    const storedToken = jwtHandler_class_1.jwtHandler.verifyToken(cacheControl.token);
+                    if (storedToken.expireDate && storedToken.deviceId) {
+                        if (new Date(Date.parse(storedToken.expireDate)) > today && !(yield hashHelper_1.HashHelper.compare(body.user_agent, storedToken.deviceId)))
+                            return (0, responseHelper_1.generateResponse)({ id: storedToken.id }, "You have an open session. Would you like to end your current session and continue from here?", "KILL_SESSION", 409);
                         else {
-                            user.password = yield hashHelper_1.HashHelper.encrypt(password);
-                            yield this.userRepository.update(user._id, user);
-                            this.cacheService.removeCacheItem(`${user_agent}-forgotPass`);
-                            this.response = (0, responseHelper_1.generateResponse)({}, "The password has been successfully changed.", "LOGIN_REQUIRED", 200);
-                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `${user._id} has changed his password. [FORGOT PASSWORD]`);
+                            return (0, responseHelper_1.generateResponse)({ token: cacheControl.token, expireDate: storedToken.expireDate, id: storedToken.id }, "Already logged in", "", 200);
                         }
                     }
                 }
-                else {
-                    this.response = (0, responseHelper_1.generateResponse)({}, "Forgot Password time has expired", "", 404);
-                }
-            }
-            catch (error) {
-                this.response = (0, responseHelper_1.generateResponse)({}, "Forgot Password time has expired", "", 404);
-            }
-            return this.response;
-        });
-        this.Login = (user_agent, email, password) => __awaiter(this, void 0, void 0, function* () {
-            this.response = undefined;
-            let user = yield this.userRepository.findOne({ email: email });
-            let today = new Date();
-            if (user) {
-                if (!(yield hashHelper_1.HashHelper.compare(password, user.password)))
-                    this.response = (0, responseHelper_1.generateResponse)({}, "The password you entered is incorrect", "LOGIN_REQUIRED", 400);
-                else if (user.verified === false)
-                    this.response = (0, responseHelper_1.generateResponse)({}, "You need to verify your e-mail.", "VERIFY_EMAIL", 403);
-                else {
-                    let cachedData = yield this.cacheService.getCacheItem(user._id);
-                    if (cachedData) {
-                        try {
-                            let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(cachedData.token);
-                            if (decodedToken.expireDate && decodedToken.deviceId) {
-                                if (new Date(Date.parse(decodedToken.expireDate)) > today && !(yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId)))
-                                    this.response = (0, responseHelper_1.generateResponse)({ id: decodedToken.id }, "You have an open session. Would you like to end your current session and continue from here?", "KILL_SESSION", 409);
-                                else
-                                    this.response = (0, responseHelper_1.generateResponse)({}, "Already logged in", "", 400);
-                            }
-                        }
-                        catch (error) {
-                            this.cacheService.removeCacheItem(user._id);
-                            let token = jwtHandler_class_1.jwtHandler.signNewToken({
-                                id: user._id,
-                                deviceId: yield hashHelper_1.HashHelper.encrypt(user_agent),
-                                role: user.roleId,
-                                expireDate: new Date(new Date().setDate(today.getDate() + 7))
-                            }, '7d');
-                            this.cacheService.setCacheItem(user._id, { token });
-                            this.response = (0, responseHelper_1.generateResponse)({ token }, "Logging in...", "HOME_PAGE", 200);
-                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} logged into the system]`);
-                        }
-                    }
-                    else {
-                        let token = jwtHandler_class_1.jwtHandler.signNewToken({
-                            id: user._id,
-                            deviceId: yield hashHelper_1.HashHelper.encrypt(user_agent),
-                            role: user.roleId,
-                            expireDate: new Date(new Date().setDate(today.getDate() + 7))
-                        }, '7d');
-                        this.cacheService.setCacheItem(user._id, { token });
-                        this.response = (0, responseHelper_1.generateResponse)({ token }, "Logging in...", "HOME_PAGE", 200);
-                        this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} logged into the system]`);
-                    }
-                }
-            }
-            else {
-                this.response = (0, responseHelper_1.generateResponse)({}, "The email address you entered is not valid", "HOME_PAGE", 404);
-            }
-            return this.response;
-        });
-        this.resetSessionAndLogin = (id, user_agent) => __awaiter(this, void 0, void 0, function* () {
-            this.response = undefined;
-            let user = yield this.userRepository.getById(id);
-            let today = new Date();
-            if (user) {
-                let cachedData = yield this.cacheService.getCacheItem(user._id);
-                if (cachedData) {
-                    let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(cachedData.token);
-                    if (decodedToken.expireDate && decodedToken.deviceId) {
-                        if (new Date(Date.parse(decodedToken.expireDate)) > today && !(yield hashHelper_1.HashHelper.compare(user_agent, decodedToken.deviceId))) {
-                            this.cacheService.removeCacheItem(user._id);
-                            let token = jwtHandler_class_1.jwtHandler.signNewToken({
-                                id: user._id,
-                                deviceId: yield hashHelper_1.HashHelper.encrypt(user_agent),
-                                role: user.roleId,
-                                expireDate: new Date(new Date().setDate(today.getDate() + 7))
-                            }, '7d');
-                            this.cacheService.setCacheItem(user._id, { token });
-                            this.response = (0, responseHelper_1.generateResponse)({ token }, "Loggin in...", "HOME_PAGE", 200);
-                            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} killed his other session and logged into the system from different device]`);
-                        }
-                        else
-                            this.response = (0, responseHelper_1.generateResponse)({}, "Invalid token", "", 400);
-                    }
-                }
-            }
-            else
-                this.response = (0, responseHelper_1.generateResponse)({}, "Invalid User.", "", 404);
-            return this.response;
-        });
-        this.resetPassword = (id, currentPassword, newPassword) => __awaiter(this, void 0, void 0, function* () {
-            this.response = undefined;
-            let user = yield this.userRepository.getById(id);
-            if (user) {
-                if (!(yield hashHelper_1.HashHelper.compare(currentPassword, user.password)))
-                    this.response = (0, responseHelper_1.generateResponse)({}, "Your old password is incorrect.", "TRY_AGAIN", 400);
-                else if (yield hashHelper_1.HashHelper.compare(newPassword, user.password))
-                    this.response = (0, responseHelper_1.generateResponse)({}, "The new password cannot be the same as the old password.", "", 400);
-                else {
-                    user.password = yield hashHelper_1.HashHelper.encrypt(newPassword);
-                    this.userRepository.update(user._id, user);
-                    this.response = (0, responseHelper_1.generateResponse)({}, "Your password has been changed.", "LOGIN_REQUIRED", 200);
-                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} has change password.]`);
+                catch (error) {
                     this.cacheService.removeCacheItem(user._id);
                 }
             }
-            else
-                this.response = (0, responseHelper_1.generateResponse)({}, "Invalid user operation", "LOGIN_REQURED", 404);
-            return this.response;
+            const token = jwtHandler_class_1.jwtHandler.signNewToken({
+                id: user._id,
+                deviceId: yield hashHelper_1.HashHelper.encrypt(body.user_agent),
+                role: user.roleId,
+                expireDate: new Date(new Date().setDate(today.getDate() + 7))
+            });
+            this.cacheService.setCacheItem(user._id, { token });
+            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} logged into the system]`);
+            return (0, responseHelper_1.generateResponse)({
+                id: user._id.toString(),
+                token: token, expireDate: (new Date(new Date().setDate(today.getDay() + 7)))
+            }, "Logging in...", "HOME_PAGE", 200);
         });
-        this.logOut = (token) => __awaiter(this, void 0, void 0, function* () {
-            this.response = undefined;
-            let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(token.split(' ')[1]);
+        this.resetSessionAndLogin = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getAllDataWithPopulate('roleId', 'Role', body.id, undefined);
+            let today = new Date();
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid User.", "", 404);
+            let cachedData = yield this.cacheService.getCacheItem(body.id);
+            if (cachedData) {
+                try {
+                    let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(cachedData.token);
+                    if (decodedToken.expireDate && decodedToken.deviceId) {
+                        if (!(new Date(Date.parse(decodedToken.expireDate)) > today && !(yield hashHelper_1.HashHelper.compare(body.user_agent, decodedToken.deviceId))))
+                            return (0, responseHelper_1.generateResponse)({}, "Invalid token", "", 400);
+                        this.cacheService.removeCacheItem(body.id);
+                        let token = jwtHandler_class_1.jwtHandler.signNewToken({
+                            id: body.id,
+                            deviceId: yield hashHelper_1.HashHelper.encrypt(body.user_agent),
+                            role: user.roleId,
+                            expireDate: new Date(new Date().setDate(today.getDate() + 7))
+                        }, '7d');
+                        this.cacheService.setCacheItem(body.id, { token });
+                        this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} killed his other session and logged into the system from different device]`);
+                        return (0, responseHelper_1.generateResponse)({
+                            id: user._id.toString(),
+                            token: token, expireDate: (new Date(new Date().setDate(today.getDay() + 7)))
+                        }, "Loggin in...", "HOME_PAGE", 200);
+                    }
+                }
+                catch (error) {
+                    return (0, responseHelper_1.generateResponse)({}, "Invalid token", "", 400);
+                }
+            }
+        });
+        this.resetPassword = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getById(body.id);
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid user operation", "LOGIN_REQURED", 404);
+            if (!(yield hashHelper_1.HashHelper.compare(body.currentPassword, user.password)))
+                return (0, responseHelper_1.generateResponse)({}, "Your old password is incorrect.", "TRY_AGAIN", 400);
+            if (yield hashHelper_1.HashHelper.compare(body.newPassword, user.password))
+                return (0, responseHelper_1.generateResponse)({}, "The new password cannot be the same as the old password.", "", 400);
+            user.password = yield hashHelper_1.HashHelper.encrypt(body.newPassword);
+            yield this.repositoryService.userRepository.update(user._id, user);
+            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} has change password.]`);
+            this.cacheService.removeCacheItem(user._id);
+            return (0, responseHelper_1.generateResponse)({}, "Your password has been changed.", "LOGIN_REQUIRED", 200);
+        });
+        this.logOut = (body) => __awaiter(this, void 0, void 0, function* () {
+            let decodedToken = jwtHandler_class_1.jwtHandler.verifyToken(body.token.split(' ')[1]);
             if (decodedToken) {
-                let user = yield this.userRepository.getById(decodedToken.id);
-                if (user && this.cacheService.getCacheItem(decodedToken.id)) {
+                let user = yield this.repositoryService.userRepository.getById(decodedToken.id);
+                if (user && (yield this.cacheService.getCacheItem(decodedToken.id))) {
                     this.cacheService.removeCacheItem(decodedToken.id);
-                    this.response = (0, responseHelper_1.generateResponse)({}, "", "", 200);
                     this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id} has left from the system.]`);
+                    return (0, responseHelper_1.generateResponse)({}, "", "", 200);
                 }
             }
             else {
-                this.response = (0, responseHelper_1.generateResponse)({}, "Already Logged out.", "", 400);
+                return (0, responseHelper_1.generateResponse)({}, "Already Logged out.", "", 400);
             }
-            return this.response;
         });
-        this.userRepository = _userRepository;
-        this.mailService = mailProvider_class_1.GmailSender.getInstance();
-        this.loggerService = _loggerService;
+        this.freezeAccount = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getById(body.user);
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid User", "", 404);
+            if (!(yield hashHelper_1.HashHelper.compare(body.password, user.password)))
+                return (0, responseHelper_1.generateResponse)({}, "The password you entered is incorrect", "", 400);
+            if (user.frozenAccount && user.frozenAccount === true)
+                return (0, responseHelper_1.generateResponse)({}, "This account already frozen.", "", 400);
+            user.frozenAccount = true;
+            user.frozenAccountCode = codeGenerator_1.CodeGenerator.generateVerificationCode(6);
+            yield this.repositoryService.userRepository.update(user._id.toString(), user);
+            const cacheItem = yield this.cacheService.getCacheItem(user._id.toString());
+            if (cacheItem) {
+                this.cacheService.removeCacheItem(user._id.toString());
+            }
+            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.all, `[${user._id.toString()}] has frozen his/her account`);
+            return (0, responseHelper_1.generateResponse)({}, "Your account has been successfully frozen", "", 200);
+        });
+        this.reactivateAccountLink = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getById(body.user);
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid User", "", 404);
+            if (user.frozenAccount && user.frozenAccount === false)
+                return (0, responseHelper_1.generateResponse)({}, "Your account is already active", "REACTIVATE_ACCOUNT", 400);
+            const code = user.frozenAccountCode;
+            yield linkHelper_1.LinkHelper.SendActivationLink(user.email, user._id.toString(), code);
+            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `Reactivation Email Has been sent to [${user._id.toString()}]`);
+            return (0, responseHelper_1.generateResponse)({}, "The reactivation email has been sent to your account", "", 200);
+        });
+        this.reactivateAccountConfirm = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getById(body.user);
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid User", "", 404);
+            if (user.frozenAccount && user.frozenAccount === false)
+                return (0, responseHelper_1.generateResponse)({}, "Your account already activated.", "", 400);
+            if (user.frozenAccount && user.frozenAccount === true) {
+                let match = user.frozenAccountCode === body.code;
+                if (match) {
+                    console.log("matched");
+                    user.frozenAccount = false;
+                    user.frozenAccountCode = "";
+                    yield this.repositoryService.userRepository.update(user._id.toString(), user);
+                    this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id.toString()}] has been activated his/her account`);
+                    return (0, responseHelper_1.generateResponse)({}, "Your account has been activated", "", 200);
+                }
+            }
+        });
+        this.deleteAccount = (body) => __awaiter(this, void 0, void 0, function* () {
+            let user = yield this.repositoryService.userRepository.getById(body.user);
+            if (!user)
+                return (0, responseHelper_1.generateResponse)({}, "Invalid User", "", 404);
+            if (!(yield hashHelper_1.HashHelper.compare(body.password, user.password)))
+                return (0, responseHelper_1.generateResponse)({}, "The password you entered is incorrect", "", 400);
+            const cacheItem = yield this.cacheService.getCacheItem(user._id.toString());
+            if (cacheItem) {
+                this.cacheService.removeCacheItem(user._id.toString());
+            }
+            yield this.repositoryService.automationSettingsRepo.deleteMany({ userId: user });
+            yield this.repositoryService.creditRepository.deleteMany({ userId: user });
+            yield this.repositoryService.customerGroupRepository.deleteMany({ userId: user });
+            yield this.repositoryService.extraPhoneRepo.deleteMany({ userId: user });
+            yield this.repositoryService.quequeRepository.deleteMany({ userId: user });
+            yield this.repositoryService.userRepository.delete(user._id.toString());
+            this.loggerService.Log(loggerService_class_1.LogType.INFO, loggerService_class_1.LogLocation.consoleAndFile, `[${user._id.toString()}] has been deleted his/her account`);
+            return (0, responseHelper_1.generateResponse)({}, "", "", 200);
+        });
+        this.loggerService = loggerService;
         this.cacheService = cacheService;
+        this.repositoryService = repositoryService;
+    }
+    createUser(body) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const encryptedPassword = yield hashHelper_1.HashHelper.encrypt(body.password);
+            const roleId = (yield this.repositoryService.roleRepository.findOne({ roleName: 'User' }))._id;
+            const saved = yield this.repositoryService.userRepository.create({
+                avatar: body.avatar,
+                firstName: body.firstName,
+                lastName: body.lastName,
+                phone: body.phone,
+                email: body.email,
+                password: encryptedPassword,
+                extraNumberCount: 0,
+                roleId: roleId
+            });
+            yield linkHelper_1.LinkHelper.SendVerifyEmail(saved.email, saved._id);
+            return saved;
+        });
     }
 };
 exports.AuthenticationUseCases = AuthenticationUseCases;
 exports.AuthenticationUseCases = AuthenticationUseCases = __decorate([
     (0, inversify_1.injectable)(),
-    __param(0, (0, inversify_1.inject)(ioc_types_1.Types.IRepository)),
+    __param(0, (0, inversify_1.inject)("RepositoryService")),
     __param(1, (0, inversify_1.inject)(ioc_types_1.Types.LoggerService)),
     __param(2, (0, inversify_1.inject)("ICacheService")),
-    __metadata("design:paramtypes", [userRepository_class_1.UserRepository,
-        loggerService_class_1.LoggerService,
-        redisService_1.CacheService])
+    __metadata("design:paramtypes", [repositoryService_class_1.RepositoryService,
+        loggerService_class_1.LoggerService, Object])
 ], AuthenticationUseCases);
 //# sourceMappingURL=authenticationUseCases.js.map

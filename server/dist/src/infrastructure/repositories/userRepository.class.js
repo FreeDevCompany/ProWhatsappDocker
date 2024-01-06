@@ -25,9 +25,10 @@ exports.UserRepository = void 0;
 const repository_abstract_1 = require("./repository.abstract");
 const inversify_1 = require("inversify");
 const ioc_types_1 = require("../../domain/models/ioc.types");
+require("reflect-metadata");
 let UserRepository = class UserRepository extends repository_abstract_1.RepositoryBase {
-    constructor(dbContext) {
-        super(dbContext);
+    constructor(userDbContext) {
+        super(userDbContext);
         this.findUserWithToken = (token) => __awaiter(this, void 0, void 0, function* () {
             return yield this.findOne({ 'activeSession.token': token });
         });
@@ -44,12 +45,29 @@ let UserRepository = class UserRepository extends repository_abstract_1.Reposito
                 roleId: roleId
             });
         });
+        this.getAllDataWithPopulate = (rolerefName, rolModelName, id, email) => __awaiter(this, void 0, void 0, function* () {
+            if (id && !email) {
+                return (yield this.dbContext.model.findById(id).populate({
+                    path: rolerefName, model: rolModelName, options: {
+                        strictPopulate: false
+                    }
+                }).exec());
+            }
+            if (email && !id) {
+                return yield this.dbContext.model.findOne({ email: email }).populate({
+                    path: rolerefName, model: rolModelName, options: {
+                        strictPopulate: false
+                    }
+                }).exec();
+            }
+        });
     }
 };
 exports.UserRepository = UserRepository;
 exports.UserRepository = UserRepository = __decorate([
     (0, inversify_1.injectable)(),
     __param(0, (0, inversify_1.inject)(ioc_types_1.Types.IDbContext)),
+    __param(0, (0, inversify_1.named)("userDbContext")),
     __metadata("design:paramtypes", [Object])
 ], UserRepository);
 //# sourceMappingURL=userRepository.class.js.map

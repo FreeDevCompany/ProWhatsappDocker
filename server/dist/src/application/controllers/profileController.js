@@ -30,7 +30,37 @@ let ProfileController = class ProfileController {
     constructor(_service) {
         this.getUserDetails = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
             let token = req.headers['x-token'];
-            let response = yield this.profileUseCaseService.getUserDetails((token && token.split(' ')[1]));
+            let response = yield this.profileUseCaseService.getUserDetails({
+                token: (token && token.split(' ')[1])
+            });
+            return res.status(response.status_code).json(response);
+        }));
+        this.updateUserDetails = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let id = req.params.user;
+            let response = yield this.profileUseCaseService.updateUserDetails(id, req.body);
+            return res.status(response.status_code).json(response);
+        }));
+        this.getActiveSessions = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let id = req.params.user;
+            let { perpage, page } = req.query;
+            let response = yield this.profileUseCaseService.getActiveSessions({ id: id, page: page, perpage: perpage });
+            return res.status(response.status_code).json(response);
+        }));
+        this.getAutomationSettings = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let id = req.params.user;
+            let response = yield this.profileUseCaseService.getAutomationSettings({ id });
+            return res.status(response.status_code).json(response);
+        }));
+        this.updateAutomationSettings = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let id = req.params.user;
+            let body = req.body;
+            let response = yield this.profileUseCaseService.updateAutomationSettings(id, body);
+            return res.status(response.status_code).json(response);
+        }));
+        this.deleteSession = errorHandler_1.ErrorHandler.UnhandledExceptionHanlder((req, res) => __awaiter(this, void 0, void 0, function* () {
+            let { user } = req.params;
+            let { session, password } = req.body;
+            const response = yield this.profileUseCaseService.deleteSession({ user: user, session: session, password: password });
             return res.status(response.status_code).json(response);
         }));
         this.profileUseCaseService = _service;

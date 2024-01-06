@@ -39,6 +39,10 @@ let AuthRouter = class AuthRouter {
             this.routeProvider.post("/api/v1/auth/forgot-password/", this.validations['forgot-password'], this.userController.ForgotPasswordLink);
             // forgotPasswordConfirm (need deviceId | no need token)
             this.routeProvider.patch("/api/v1/auth/forgot-password-confirm/:token", this.validations['forgot-password-confirm'], this.userController.ForgotPasswordConfirm);
+            this.routeProvider.post("/api/v1/auth/:user/account/freeze-account", this.validations['freezeAccount'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.userController.FreezeAccount);
+            this.routeProvider.post("/api/v1/auth/:user/account/reactivate-account", this.validations['reactivateAccount'], this.userController.ReactivateAccount);
+            this.routeProvider.post("/api/v1/auth/:user/account/reactivate-account-confirm/:code", this.validations['reactivateAccountConfirm'], this.userController.ReactivateAccountConfirm);
+            this.routeProvider.post("/api/v1/auth/:user/account/delete-account", this.validations['deleteAccount'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.userController.DeleteAccount);
         };
         this.getRouterProvider = () => {
             return this.routeProvider;
@@ -55,6 +59,10 @@ let AuthRouter = class AuthRouter {
         this.validations['forgot-password-confirm'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.forgotPasswordConfirmBody, undefined, userValidations_1.forgotPasswordParam);
         this.validations['reset-session-login'] = this.validationBuilder.build(headerValidations_1.baseHeader, userValidations_1.resetSessionBod, undefined, undefined);
         this.validations['logout'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, undefined, undefined, undefined);
+        this.validations['freezeAccount'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, userValidations_1.freezeAccountBody, undefined, userValidations_1.freezeAccountParam);
+        this.validations['reactivateAccount'] = this.validationBuilder.build(headerValidations_1.baseHeader, undefined, undefined, userValidations_1.reactivteAccountParam);
+        this.validations['reactivateAccountConfirm'] = this.validationBuilder.build(headerValidations_1.baseHeader, undefined, undefined, userValidations_1.reactivateAccountConfirmParam);
+        this.validations['deleteAccount'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, userValidations_1.deleteAccountBody, undefined, userValidations_1.deleteAccountParam);
     }
 };
 exports.AuthRouter = AuthRouter;

@@ -12,6 +12,14 @@ exports.Types = {
     Middleware: Symbol.for("Middleware"),
     LoggerService: Symbol.for("LoggerService"),
     profileUseCases: Symbol.for("ProfileUseCases"),
-    profileController: Symbol.for("ProfileController")
+    profileController: Symbol.for("ProfileController"),
+    CustomerUseCases: Symbol.for("CustomerUseCases"),
+    CustomerController: Symbol.for("CustomerController"),
+    DraftUseCases: Symbol.for("DraftUseCases"),
+    DraftController: Symbol.for("DraftController"),
+    QuequeUseCases: Symbol.for("QuequeUseCases"),
+    QuequeController: Symbol.for("QuequeController"),
+    WebSocketController: Symbol.for("WebSocketController"),
+    WhatsappService: Symbol.for("WhatsappService")
 };
 //# sourceMappingURL=ioc.types.js.map

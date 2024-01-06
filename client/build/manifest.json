@@ -1,5 +1,8 @@
 {
-  "short_name": "Metronic React App",
-  "name": "Metronic React App demo1",
-  "start_url": "."
+  "short_name": "Pro Whats App Web",
+  "name": "Pro Whats App Web v0.0.1",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
 }

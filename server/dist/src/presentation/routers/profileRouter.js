@@ -20,11 +20,17 @@ const middlewares_1 = require("../../application/middlewares");
 const validationBuilder_1 = require("../../infrastructure/services/validationBuilder");
 const ioc_types_1 = require("../../domain/models/ioc.types");
 const headerValidations_1 = require("../../infrastructure/validations/headerValidations");
+const userValidations_1 = require("../../infrastructure/validations/userValidations");
 let ProfileRouter = class ProfileRouter {
     constructor(controller, validationBuilder, middleware) {
         this.validations = {};
         this.matchControllerToRouter = () => {
             this.routeProvider.get("/api/v1/profile/details/", this.validations['userDetails'], this.middleware.verifySession, this.profileController.getUserDetails);
+            this.routeProvider.patch("/api/v1/:user/profile/details/update/", this.validations['updateUserDetails'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.profileController.updateUserDetails);
+            this.routeProvider.get("/api/v1/:user/profile/automation-settings/", this.validations['getAutomationSettings'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.profileController.getAutomationSettings);
+            this.routeProvider.patch("/api/v1/:user/profile/automation-settings/update/", this.validations['updateAutomaionSettings'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.profileController.updateAutomationSettings);
+            this.routeProvider.get("/api/v1/:user/profile/active-session", this.validations['activeSessions'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.profileController.getActiveSessions);
+            this.routeProvider.post("/api/v1/:user/profile/active-sessions/delete", this.validations['delete-session'], this.middleware.isFrozenAccount, this.middleware.verifySession, this.profileController.deleteSession);
         };
         this.getRouterProvider = () => {
             return this.routeProvider;
@@ -34,6 +40,11 @@ let ProfileRouter = class ProfileRouter {
         this.validationBuilder = validationBuilder;
         this.middleware = middleware;
         this.validations['userDetails'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, undefined, undefined, undefined);
+        this.validations['updateUserDetails'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, userValidations_1.updateProfileBody, undefined, userValidations_1.updateProfileParam);
+        this.validations['getAutomationSettings'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, undefined, undefined, userValidations_1.getAutomationSettingsParam);
+        this.validations['updateAutomaionSettings'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, userValidations_1.updateAutomationSettings, undefined, userValidations_1.getAutomationSettingsParam);
+        this.validations['activeSessions'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, undefined, userValidations_1.activeSessionsQuery, userValidations_1.activeSessionsParam);
+        this.validations['delete-session'] = this.validationBuilder.build(headerValidations_1.baseHeaderWithToken, userValidations_1.deleteSessionBody, undefined, userValidations_1.deleteSessionParam);
     }
 };
 exports.ProfileRouter = ProfileRouter;

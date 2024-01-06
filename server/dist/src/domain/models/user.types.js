@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userSchema = void 0;
 const mongoose_1 = require("mongoose");
-;
 exports.userSchema = new mongoose_1.Schema({
     avatar: {
         required: true,
@@ -34,12 +33,23 @@ exports.userSchema = new mongoose_1.Schema({
     },
     roleId: {
         required: true,
-        type: String,
+        type: mongoose_1.Types.ObjectId,
+        ref: 'Role',
     },
     verified: {
         required: false,
         type: Boolean,
         default: false,
+    },
+    frozenAccount: {
+        required: false,
+        type: Boolean,
+        default: false
+    },
+    frozenAccountCode: {
+        required: false,
+        type: String,
+        default: ""
     },
     extraNumberCount: {
         required: true,

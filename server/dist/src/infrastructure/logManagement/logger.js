@@ -42,6 +42,8 @@ const path_1 = __importDefault(require("path"));
 const winston_daily_rotate_file_1 = __importDefault(require("winston-daily-rotate-file"));
 const fs_1 = __importDefault(require("fs"));
 const inversify_1 = require("inversify");
+require("reflect-metadata");
+const config_1 = __importDefault(require("../../domain/logic/config"));
 let ConsoleLogger = class ConsoleLogger {
     constructor() {
         this.log = (level, message) => {
@@ -101,7 +103,7 @@ let DbLogger = class DbLogger {
         };
         this.logger = winston_1.default.createLogger({
             transports: [new winston_1.transports.MongoDB({
-                    db: process.env.MONGO_URL,
+                    db: config_1.default.mongo,
                     options: { useUnifiedTopology: true },
                     collection: 'Logs',
                 })],

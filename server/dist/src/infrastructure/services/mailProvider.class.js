@@ -31,9 +31,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GmailSender = void 0;
 const nodemailer = __importStar(require("nodemailer"));
+const config_1 = __importDefault(require("../../domain/logic/config"));
 class GmailSender {
     constructor() {
         this.createLocalConnection = () => __awaiter(this, void 0, void 0, function* () {
@@ -51,7 +55,6 @@ class GmailSender {
                 return true;
             }
             catch (e) {
-                console.log(e);
                 return false;
             }
         });
@@ -60,14 +63,13 @@ class GmailSender {
                 this.transporter = nodemailer.createTransport({
                     service: 'Gmail',
                     auth: {
-                        user: process.env.SMTP_CONFIG_USERNAME,
-                        pass: process.env.SMTP_CONFIG_PASSWORD
+                        user: config_1.default.smtpConfig.username,
+                        pass: config_1.default.smtpConfig.password
                     }
                 });
                 return true;
             }
             catch (e) {
-                console.log(e);
                 return false;
             }
             return false;
@@ -84,10 +86,8 @@ class GmailSender {
                 html: mailData.html,
             })
                 .then((info) => {
-                console.log(info);
                 return true;
             }).catch((error) => {
-                console.log(error);
                 return false;
             });
         });

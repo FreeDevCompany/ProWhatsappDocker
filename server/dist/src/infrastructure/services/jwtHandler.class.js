@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.jwtHandler = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const singleton_type_1 = require("../../domain/utilities/singleton.type");
+const config_1 = __importDefault(require("../../domain/logic/config"));
 class JwtHandler {
     signNewToken(data, expire = '1h') {
         var verifyOptions = {
@@ -16,7 +17,7 @@ class JwtHandler {
             notBefore: "0",
             algorithm: 'HS256'
         };
-        let privateKey = process.env.JWT_SECRET_KEY;
+        let privateKey = config_1.default.jwt;
         var token = jsonwebtoken_1.default.sign(data, privateKey, verifyOptions);
         return token;
     }
@@ -29,7 +30,7 @@ class JwtHandler {
             notBefore: "0",
             algorithm: 'HS256'
         };
-        let privateKey = process.env.JWT_SECRET_KEY;
+        let privateKey = config_1.default.jwt;
         return jsonwebtoken_1.default.verify(token, privateKey, verifyOptions);
     }
 }

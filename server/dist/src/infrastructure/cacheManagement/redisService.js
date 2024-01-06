@@ -17,10 +17,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CacheService = void 0;
 const ioredis_1 = require("ioredis");
 const inversify_1 = require("inversify");
+const config_1 = __importDefault(require("../../domain/logic/config"));
 let CacheService = class CacheService {
     constructor() {
         this.setCacheItem = (key, item) => {
@@ -32,10 +36,10 @@ let CacheService = class CacheService {
         this.removeCacheItem = (key) => {
             this.redisClient.del(key);
         };
-        this.redisClient = new ioredis_1.Redis(process.env.REDIS_URL, {
+        this.redisClient = new ioredis_1.Redis({
             connectTimeout: 10000,
-            host: `redis`,
-            port: 6379
+            host: config_1.default.redis.host,
+            port: config_1.default.redis.port,
         });
     }
 };

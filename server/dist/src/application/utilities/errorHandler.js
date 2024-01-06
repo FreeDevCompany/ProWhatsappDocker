@@ -21,7 +21,6 @@ ErrorHandler.UnhandledExceptionHanlder = (asyncFunction) => {
             yield asyncFunction(req, res);
         }
         catch (error) {
-            console.log(error);
             res.status(500).send({
                 data: {},
                 message: error.message,

@@ -1,0 +1,114 @@
+
+												---TESTED ENDPOINTS---
+AUTHENTICATION ENDPOINTS:
+	->	Register OK
+	->	Login OK
+	->	Verify-Email OK
+	->	Reset-Password OK
+	->	Forgot-Password OK
+	->	Forgot-Password-Confirm OK
+	->	Reset-Session-Login OK
+	->	Logou	Logout OK
+
+PROFILE ENDPOINTS:
+	-> User-Details OK
+	-> Update-User Details OK
+	-> Active-Sessions OK
+	-> Get-Automation-Settings OK
+	-> Update-Automation-Settings OK
+CUSTOMER ENDPOINTS:
+	CUSTOMER:
+		-> Add-Customer OK
+		-> Get-Customers OK
+		-> Get-Customer-By-Id OK
+		-> Delete-Customer OK
+		-> Update-Customer OK
+	GROUP:
+		-> Create-Group OK
+		-> Add-To-Group OK
+		-> Remove-from-group OK
+		-> Get-Groups OK
+		-> Get-Group-By-Id OK
+		-> Get-Group-Customers OK
+		-> Delete-Group OK
+		-> Update-Group OK
+	BLACKLIST:
+		-> Add-To-Black-List OK
+		-> Remove-From-Black-List OK
+		-> Get-Black-List OK
+	GRAYLIST:
+		-> Add-To-Gray-List OK
+		-> Remove-From-Gray-List OK
+		-> Get-Gray-List OK
+    
+
+DRAFT ENDPOINTS:
+	->
+
+QUEQUE ENDPOINTS:
+	->
+
+--------------------------------- TODO OPERATIONS -------------------------
+
+FOR REST API 
+  FOR USERS
+  -> Kullanıcının gönderilen mesajlarını (bulunan kuyruk için geçmiş ayarı yapılması)
+  -> Bu geçmiş istatistiklerinin kuyruklara göre sıralanması ve detaya girildiğinde
+    hangi kişilere mesajların gönderilemediğini vs. not edilmesi.
+  -> Kullanıcının Aylık ve yıllık kredi kullanım oranları
+  -> Hesabını silme işlemi (kullanıcı için) (PRIORITY = 2)
+  -> Hesabını dondurma işlemi (kullanıcı için) (PRIORITY = 1)
+  -> Kullanıcının girişini kontrol eden socket'e bağlama işlemi (PRIORITY = 3)
+
+  FOR ADMIN
+  -> Genel Dashboard da o anda sistemde aktif olan kullanıcıların listesi
+  -> Sistemin trafik bilgileri
+  -> Kullanıcıların kullanım yüzde dağılımları
+  -> Kullanıcılardan gelen istek kutuları
+  -> Mesaj gönderim detaylarını her kullanıcı için gönderme
+  -> Kullanıcılara kredi yükleme
+  -> Database export ve import yapma
+  -> Kendisi içinde kuyruk ve mesaj gönderme işlemleri olacak.
+ 
+
+FOR SERVICE
+
+  -> Gönderilen mesajların iletilip iletilmediğini & loglama işlemlerini ayarlamak gerekiyor.
+  -> Bekleme sürelerini düzene koyup kuyruk kontrolünü de zamanlayıcıya bağlayarak işlem yaptırtma.
+  -> Birden fazla hesap bağlama konusunda işlemleri kontrol et.
+  -> Veri tabanına loglama işlemleri yapılacak. 
+  -> Loglama işlemleri uygulanacak.
+  -> Spam olaylarına dikkat edilecek.
+  -> Mesaj almak istemiyorum olaylarına bakılacak.
+  -> Whats app kütüphanesinde emoji işlemlerini dene (sonra)
+
+
+
+
+usage middleware for frozen account and haveUser
+
+
+
+
+reset password
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
